@@ -1,185 +1,115 @@
 #! /usr/bin/python3
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Jun  6 17:13:53 2017
-
-@author: antoi and piotr
-"""
-import polo_api
+import trading_api
+import refresh_data
+import pandas as pd
+import websocket
 import time
+import json
+import multiprocessing
+import os
+import numpy as np
+import matplotlib.pyplot as plt
 
-#will modify the order every 30 seconds
-retry_period = 30
-#will try to buy two times at low price, then, will put a higher price
-retry_num = 8
-APIKey,Secret = polo_api.get_keys()
-pol = polo_api.poloniex(APIKey,Secret)
-output_file = "trading_output.data"
+folder = "data"
+max_period = 3600*24*7//300
+manager = multiprocessing.Manager()
+data = {}
+ns = manager.Namespace()
+ns.c = 0
+names = {7: 'BTC_BCN', 8: 'BTC_BELA', 10: 'BTC_BLK', 12: 'BTC_BTCD', 13: 'BTC_BTM', 14: 'BTC_BTS', 15: 'BTC_BURST', 20: 'BTC_CLAM', 24: 'BTC_DASH', 25: 'BTC_DGB', 27: 'BTC_DOGE', 28: 'BTC_EMC2', 31: 'BTC_FLDC', 32: 'BTC_FLO', 38: 'BTC_GAME', 40: 'BTC_GRC', 43: 'BTC_HUC', 50: 'BTC_LTC', 51: 'BTC_MAID', 58: 'BTC_OMNI', 60: 'BTC_NAUT', 61: 'BTC_NAV', 63: 'BTC_NEOS', 64: 'BTC_NMC', 66: 'BTC_NOTE', 69: 'BTC_NXT', 73: 'BTC_PINK', 74: 'BTC_POT', 75: 'BTC_PPC', 83: 'BTC_RIC', 86: 'BTC_SJCX', 89: 'BTC_STR', 92: 'BTC_SYS', 97: 'BTC_VIA', 98: 'BTC_XVC', 99: 'BTC_VRC', 100: 'BTC_VTC', 104: 'BTC_XBC', 108: 'BTC_XCP', 112: 'BTC_XEM', 114: 'BTC_XMR', 116: 'BTC_XPM', 117: 'BTC_XRP', 121: 'USDT_BTC', 122: 'USDT_DASH', 123: 'USDT_LTC', 124: 'USDT_NXT', 125: 'USDT_STR', 126: 'USDT_XMR', 127: 'USDT_XRP', 129: 'XMR_BCN', 130: 'XMR_BLK', 131: 'XMR_BTCD', 132: 'XMR_DASH', 137: 'XMR_LTC', 138: 'XMR_MAID', 140: 'XMR_NXT', 148: 'BTC_ETH', 149: 'USDT_ETH', 150: 'BTC_SC', 151: 'BTC_BCY', 153: 'BTC_EXP', 155: 'BTC_FCT', 158: 'BTC_RADS', 160: 'BTC_AMP', 162: 'BTC_DCR', 163: 'BTC_LSK', 166: 'ETH_LSK', 167: 'BTC_LBC', 168: 'BTC_STEEM', 169: 'ETH_STEEM', 170: 'BTC_SBD', 171: 'BTC_ETC', 172: 'ETH_ETC', 173: 'USDT_ETC', 174: 'BTC_REP', 175: 'USDT_REP', 176: 'ETH_REP', 177: 'BTC_ARDR', 178: 'BTC_ZEC', 179: 'ETH_ZEC', 180: 'USDT_ZEC', 181: 'XMR_ZEC', 182: 'BTC_STRAT', 183: 'BTC_NXC', 184: 'BTC_PASC', 185: 'BTC_GNT', 186: 'ETH_GNT', 187: 'BTC_GNO', 188: 'ETH_GNO'}
 
-def get_btc_amount():
-    balances = pol.returnBalances()
-    amount = float(balances['BTC'])
-    print("amount of bitcoins : ",amount)
-    write_output("You have a total of %s bitcoins" % str(amount))
-    return amount
+def load_data():
+    files = os.listdir(folder)
+    files = sorted(files)
+    for filename in files:
+        currency = pd.read_csv(folder + os.sep + filename)
+        name = filename[:len(filename)-4]
+        currency_data = {}
+        currency_data["price"] = manager.list(currency["close"].values[-max_period:])
+        currency_data["date"] = manager.list(currency["date"].values[-max_period:])
+        data[name] = currency_data
 
-def buy_moneys(money_list):
-    n = len(money_list)
-    #check whats the amount of bitcoin that we have
-    btc = get_btc_amount()
-    #divide the amount, we invest the same amount in each money
-    #keep a little margin
-    for_each = btc/(n+0.01)
-    retry_dates = [-1 for i in range(n)]
-    orderNumbers = ["" for i in range(n)]
-    sold = 0
-    try_num = 0
-    while sold < n:
-        for i,name in enumerate(money_list):
-            if retry_dates[i] != -2:
-                retry_dates[i],orderNumbers[i] = buy_crypto(name,for_each,try_num,retry_dates[i],orderNumbers[i])
-                if retry_dates[i] == -2:
-                    print("SOLD ONE CRYPTO")
-                    sold += 1
-        try_num += 1
-    print("everything has been bought")
+def init():
+    refresh_data.refresh_data()
+    load_data()
+    print("loaded")
+    multiprocessing.Process(target=wamp_connect,args=()).start()
+    print("launch commands")
+    commands()
+    #wamp_connect()
 
-def find_rate(pair):
-    order_book = pol.returnOrderBook(pair)
-    return float(order_book["asks"][0][0]),float(order_book["bids"][0][0])
+def on_message(ws, message):
+    try:
+        d = json.loads(message)
+        ticker = d[2]
+        t = int(time.time())
+        ID = int(ticker[0])
+        name = names[ID]
+        if name[:3] == "BTC":
+            name = name[4:]
+            data[name]["price"].append(float(ticker[1]))
+            data[name]["date"].append(t)
+            ns.c += 1
+    except:
+        print("error on receiving ticker")
 
-def buy_crypto(name,btc_amount, try_num, retry_date,orderNumber):
-    if retry_date == -2:
-        return -2,orderNumber
-    if retry_date != -1:
-        wait_time = retry_date - time.time()
-        if wait_time > 0:
-            print("waiting for next try")
-            time.sleep(wait_time)
-    pair = "BTC_"+name
-    sell_ratio,buy_ratio = find_rate(pair)
-    print("sell ratio = ",sell_ratio)
-    print("buy ratio = ",buy_ratio)
-    gap = abs((sell_ratio/buy_ratio) - 1)*100
-    print("gap is ",gap," %")
-    ratio = buy_ratio
-    if try_num >= retry_num:
-        ratio = sell_ratio
-    amount = btc_amount/sell_ratio
-    str_amount = '{:0.8f}'.format(amount)
-    str_ratio = '{:0.8f}'.format(ratio)
-    if try_num == 0:
-        print("buy %s %s, rate is %s" % (str_amount,name,str_ratio))
-        print("you will use ",btc_amount," btc")
-        #ans = input("Type ok to continue")
-        #if ans == "ok":
-        print("buying...")
-        ans = pol.buy(pair,str_ratio,str_amount)
-        print(ans)
-        orderNumber = ans["orderNumber"]
-        return time.time()+retry_period,orderNumber
-    else:
-        print("modify the order for buying %s of %s, rate is %s" % (str_amount,name,str_ratio))
-        print("you will use ",btc_amount," btc")
-        print("buying...")
-        print("order number : ",orderNumber)
-        ans = pol.moveOrder(orderNumber,str_ratio)
-        print(ans)
-        if ans["success"] == 0:
-            #has already been sold
-            print("OK************")
-            return -2,orderNumber
-        else:
-            return time.time()+retry_period,ans["orderNumber"]
+def on_error(ws, error):
+    print(error)
 
-def sell_crypto(name,amount, try_num, retry_date,orderNumber):
-    if retry_date == -2:
-        return -2,orderNumber
-    if retry_date != -1:
-        wait_time = retry_date - time.time()
-        if wait_time > 0:
-            print("waiting for next try")
-            time.sleep(wait_time)
-    pair = "BTC_"+name
-    sell_ratio,buy_ratio = find_rate(pair)
-    print("sell ratio = ",sell_ratio)
-    print("buy ratio = ",buy_ratio)
-    gap = abs((sell_ratio/buy_ratio) - 1)*100
-    print("gap is ",gap," %")
-    ratio = sell_ratio
-    if try_num >= retry_num:
-        ratio = buy_ratio
-    str_amount = '{:0.8f}'.format(amount)
-    str_ratio = '{:0.8f}'.format(ratio)
-    if try_num == 0:
-        print("sell %s %s, rate is %s" % (str_amount,name,str_ratio))
-        print("you will gain ",amount*ratio," btc")
-        print("selling...")
-        ans = pol.sell(pair,str_ratio,str_amount)
-        print(ans)
-        orderNumber = ans["orderNumber"]
-        return time.time()+retry_period,orderNumber
-    else:
-        print("modify the order for selling %s of %s, rate is %s" % (str_amount,name,str_ratio))
-        print("you will gain ",amount*ratio," btc")
-        print("selling...")
-        print("order number : ",orderNumber)
-        ans = pol.moveOrder(orderNumber,str_ratio)
-        print(ans)
-        if ans["success"] == 0:
-            #has already been sold
-            return -2,orderNumber
-        else:
-            #hasn't sold it entirely
-            return time.time()+retry_period,ans["orderNumber"]
+def on_close(ws):
+    print("### closed ###")
 
-def sell_everything():
-    balances = pol.returnBalances()
-    names = []
-    for i,name in enumerate(list(balances.keys())):
-        if float(balances[name]) != 0 and name != 'BTC':
-            print(name)
-            print(float(balances[name]))
-            names.append(name)
-    n = len(names)
-    retry_dates = [-1 for i in range(n)]
-    orderNumbers = ["" for i in range(n)]
-    sold = 0
-    try_num = 0
-    while sold < n:
-        for i,name in enumerate(names):
-            if retry_dates[i] != -2:
-                retry_dates[i],orderNumbers[i] = sell_crypto(name,float(balances[name]),try_num,retry_dates[i],orderNumbers[i])
-                if retry_dates[i] == -2:
-                    print("SOLD ONE CRYPTO")
-                    sold += 1
-        try_num += 1
-    print("everything has been sold")
+def on_open(ws):
+    print("ONOPEN")
+    def run(*args):
+        #ws.send(json.dumps({'command':'subscribe','channel':1001}))
+        ws.send(json.dumps({'command':'subscribe','channel':1002}))
+        #ws.send(json.dumps({'command':'subscribe','channel':1003}))
+        #ws.send(json.dumps({'command':'subscribe','channel':'BTC_XMR'}))
+        while True:
+            time.sleep(1)
+        ws.close()
+        print("thread terminating...")
+    print("thread created")
+    multiprocessing.Process(target=run,args=()).start()
 
-def write_output(text):
-    date = time.strftime('%d %B %Y %H:%M')
-    with open(output_file,"a") as f:
-        f.write(date + " : " +text + '\n')
+def commands():
+    while True:
+        command = input("Enter a command\n")
+        l = command.split()
+        if len(l) == 0:
+            print("Enter help for help")
+        elif l[0] == "help":
+            print("You can use :")
+            print("exit -- to exit the program")
+            print("holdings -- to have an overview of your different moneys")
+            print("disp NAME -- displays NAME")
+            print("moneys -- prints all the different moneys")
+        elif l[0] == "holdings":
+            print("not coded yet")
+        elif l[0] == "exit":
+            exit()
+        elif l[0] == "disp":
+            if len(l) == 2:
+                name = l[1]
+                f, axarr = plt.subplots(2, sharex=True)
+                axarr[0].set_title(name)
+                axarr[0].plot(data[name]["date"],data[name]["price"])
+                plt.show()
+        elif l[0] == "moneys":
+            print("different moneys :")
+            for x in data:
+                print(x)
 
-def get_btc_equivalent():
-    balances = pol.returnBalances()
-    ticker = pol.returnTicker()
-    btc_amount = 0
-    for i,name in enumerate(list(balances.keys())):
-        if float(balances[name]) != 0:
-            btc = 0
-            if name != 'BTC':
-                btc = float(balances[name])*float(ticker["BTC_"+name]["last"])
-                print("you have %s of %s that represents %s bitcoins" % (balances[name],name,str(btc)))
-            else:
-                btc = float(balances[name])
-                print("You have %s bitcoins" % str(btc))
-            btc_amount += btc
-    print("You have a total of %s bitcoins" % str(btc_amount))
+def wamp_connect():
+    print("connecting...")
+    websocket.enableTrace(True)
+    ws = websocket.WebSocketApp("wss://api2.poloniex.com/",
+                              on_message = on_message,
+                              on_error = on_error,
+                              on_close = on_close)
+    ws.on_open = on_open
+    ws.run_forever()
 
-#get_btc_equivalent()
-
-#sell_everything()
-
-#get_btc_amount()
-buy_moneys(["SJCX"])
+if __name__ == "__main__":
+    init()
