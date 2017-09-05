@@ -1,5 +1,5 @@
 #! /usr/bin/python3
-import trading_api
+#import trading_api
 import refresh_data
 import pandas as pd
 import websocket
@@ -9,6 +9,8 @@ import multiprocessing
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import candlestick
+from matplotlib.finance import candlestick2_ohlc
 
 folder = "data"
 max_period = 3600*24*7//300
@@ -22,16 +24,24 @@ def load_data():
     files = os.listdir(folder)
     files = sorted(files)
     for filename in files:
+        print("loading")
         currency = pd.read_csv(folder + os.sep + filename)
         name = filename[:len(filename)-4]
         currency_data = {}
-        currency_data["price"] = manager.list(currency["close"].values[-max_period:])
+        currency_data["close"] = manager.list(currency["close"].values[-max_period:])
+        currency_data["open"] = manager.list(currency["open"].values[-max_period:])
+        currency_data["low"] = manager.list(currency["low"].values[-max_period:])
+        currency_data["high"] = manager.list(currency["high"].values[-max_period:])
         currency_data["date"] = manager.list(currency["date"].values[-max_period:])
+        currency_data["change_1h"] = manager.list(candlestick.compute_change(currency["close"].values[-max_period:],10*3600//300))
+        currency_data["buy_x"] = manager.list()
+        currency_data["buy_y"] = manager.list()
         data[name] = currency_data
 
 def init():
-    refresh_data.refresh_data()
+    #refresh_data.refresh_data()
     load_data()
+    choose_buy_points()
     print("loaded")
     multiprocessing.Process(target=wamp_connect,args=()).start()
     print("launch commands")
@@ -47,8 +57,12 @@ def on_message(ws, message):
         name = names[ID]
         if name[:3] == "BTC":
             name = name[4:]
-            data[name]["price"].append(float(ticker[1]))
-            data[name]["date"].append(t)
+            if name == "ETH":
+                print("update ETH price : ",float(ticker[1]))
+            else:
+                print("other update")
+            #data[name]["price"].append(float(ticker[1]))
+            #data[name]["date"].append(t)
             ns.c += 1
     except:
         print("error on receiving ticker")
@@ -92,10 +106,13 @@ def commands():
         elif l[0] == "disp":
             if len(l) == 2:
                 name = l[1]
-                f, axarr = plt.subplots(2, sharex=True)
-                axarr[0].set_title(name)
-                axarr[0].plot(data[name]["date"],data[name]["price"])
-                plt.show()
+                if name in data:
+                    fig,ax = plt.subplots(3,sharex=True)
+                    candlestick2_ohlc(ax[0],data[name]['open'],data[name]['high'],data[name]['low'],data[name]['close'],width=0.6)
+                    ax[0].plot(data[name]["buy_x"],data[name]["buy_y"],'go',color="red")
+                    ax[0].set_title(name)
+                    ax[1].plot(data[name]["change_1h"])
+                    plt.show()
         elif l[0] == "moneys":
             print("different moneys :")
             for x in data:

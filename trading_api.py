@@ -9,9 +9,9 @@ import polo_api
 import time
 
 #will modify the order every 30 seconds
-retry_period = 30
+retry_period = 0
 #will try to buy two times at low price, then, will put a higher price
-retry_num = 8
+retry_num = 1
 APIKey,Secret = polo_api.get_keys()
 pol = polo_api.poloniex(APIKey,Secret)
 output_file = "trading_output.data"
@@ -29,7 +29,7 @@ def buy_moneys(money_list):
     btc = get_btc_amount()
     #divide the amount, we invest the same amount in each money
     #keep a little margin
-    for_each = btc/(n+0.01)
+    for_each = btc/(n+0.05)
     retry_dates = [-1 for i in range(n)]
     orderNumbers = ["" for i in range(n)]
     sold = 0
@@ -177,9 +177,9 @@ def get_btc_equivalent():
             btc_amount += btc
     print("You have a total of %s bitcoins" % str(btc_amount))
 
-#get_btc_equivalent()
+get_btc_equivalent()
 
 #sell_everything()
 
 #get_btc_amount()
-#buy_moneys(["SJCX"])
+#buy_moneys(["NMC"])

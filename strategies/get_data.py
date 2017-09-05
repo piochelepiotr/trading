@@ -6,13 +6,13 @@ import json
 import csv
 import os
 import multiprocessing
+import load_data
 
-currency_list = ['AMP','ARDR','BCN','BCY','BELA','BLK','BTCD','BTM','BTS','BURST','CLAM','DASH','DCR','DGB','DOGE','EMC2','ETC','ETH','EXP','FCT','FLDC','FLO','GAME','GNO','GNT','GRC','HUC','LBC','LSK','LTC','MAID','NAUT','NAV','NEOS','NMC','NOTE','NXC','NXT','OMNI','PASC','PINK','POT','PPC','RADS','REP','RIC','SBD','SC','SJCX','STEEM','STR','STRAT','SYS','VIA','VRC','VTC','XBC','XCP','XEM','XMR','XPM','XRP','XVC','ZEC']
 
 base_url = "https://poloniex.com/public?command=returnChartData&currencyPair=BTC_"
-data_folder = "data"
+data_folder_base = "data_"
 
-period = 3600*24*365
+period = 3600*24*30*3
 step = 3600*24*30*2
 
 def make_dir(path):
@@ -25,7 +25,7 @@ def make_dir(path):
     if(not os.path.isdir(path)):
         os.mkdir(path)
 
-def get_missing_period(name):
+def get_missing_period(name,spacing):
     """
     Finds the period of time between the last update of a csv and the current time. 
     
@@ -36,18 +36,19 @@ def get_missing_period(name):
         (int): starting time of the missing period
         (int): end time of the missing period
     """
+    data_folder = data_folder_base + str(spacing)
     end_time = int(time.time())
     start_time = end_time - period
     filename = data_folder + os.sep + name + '.csv'
     exists = os.path.exists(filename)
     if not exists:
-        create_csv(name)
-    time_ = get_last_timestamp(name)
+        create_csv(name,spacing)
+    time_ = get_last_timestamp(name,spacing)
     if time_ != -1:
         start_time = time_
     return start_time,end_time
 
-def get_last_timestamp(name):
+def get_last_timestamp(name,spacing):
     """
     Finds the last timestamp of a given csv
     
@@ -57,6 +58,7 @@ def get_last_timestamp(name):
     Returns:
         (int): last timestamp of the csv
     """
+    data_folder = data_folder_base + str(spacing)
     filename = data_folder + os.sep + name + '.csv'
     tp = -1
     with open(filename, 'r') as csvfile:
@@ -70,13 +72,14 @@ def get_last_timestamp(name):
         return tp
     print("error opening file ",filename)
 
-def create_csv(name):
+def create_csv(name,spacing):
     """
     Create csv files with headers for every given currency.
     
     Args:
         name (string): name of the csv to consider
     """
+    data_folder = data_folder_base + str(spacing)
     filename = data_folder + os.sep + name + '.csv'
     #permission = input('This operation will delete all previous data,\nAre you sure you want to continue ?\
     #        \nType delete to continue\n')
@@ -98,7 +101,7 @@ def get_pair(name,spacing):
         name (string): name of the csv to consider
     """
     print("*******  Getting ", name)
-    start_time,end_time = get_missing_period(name)
+    start_time,end_time = get_missing_period(name,spacing)
     while(start_time <= end_time):
         print("start time = ", start_time)
         if(not(get_part_pair(name, start_time+1,start_time + step,spacing))):
@@ -137,13 +140,13 @@ def get_part_pair(name, start_time, end_time,spacing):
             pass
     if(worked):
         data = json.loads(r.text)
-        write_data(data, name)
+        write_data(data, name,spacing)
         return True
     else:
         print("impossible to get ", name)
         return False
 
-def write_data(data, name):
+def write_data(data, name,spacing):
     """
     Write the data from the dictionary to the concerned csv files
 
@@ -151,6 +154,7 @@ def write_data(data, name):
         data: dictionary associating currencies' acronyms to the relevant data
         name: name of the csv to consider
     """
+    data_folder = data_folder_base + str(spacing)
     filename = data_folder + os.sep + name + '.csv'
     with open(filename, 'a') as csvfile:
         wr = csv.writer(csvfile,lineterminator = '\n' )
@@ -167,14 +171,16 @@ def write_data(data, name):
                 L.append(x['weightedAverage'])
                 wr.writerow(L)
 
-def refresh_data(spacing):
-    #p_list = []
-    for name in currency_list:
-        get_pair(name,spacing)
-        #p = multiprocessing.Process(target=get_pair,args=(name,spacing))
-        #p_list.append(p)
-        #p.start()
-    #for name in currency_list:
-    #    p.join()
+def get_data(spacing):
+    p_list = []
+    for name in load_data.currency_list:
+        #get_pair(name,spacing)
+        p = multiprocessing.Process(target=get_pair,args=(name,spacing))
+        p_list.append(p)
+        p.start()
+    for name in load_data.currency_list:
+        p.join()
 
+
+get_data(300)
 
