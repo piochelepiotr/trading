@@ -27,16 +27,18 @@ def find_rate(pair):
     order_book = pol.returnOrderBook(pair)
     return float(order_book["asks"][0][0]),float(order_book["bids"][0][0])
 
-def buy_low(btc_amount,name,buy_price):
+def place_buy_order(btc_amount,name,buy_price):
     #place buy order
     pair = "BTC_"+name
     amount = btc_amount / buy_price
     str_amount = '{:0.8f}'.format(amount)
     str_buy_price = '{:0.8f}'.format(buy_price)
     print("buying ",name," at ",str_buy_price)
-    ans = pol.buy(pair,str_ratio,str_amount)
-    orderNumber = ans["orderNumber"]
-    return orderNumber
+    ans = input("Type ok to continue")
+    if ans == "ok":
+        ans = pol.buy(pair,str_ratio,str_amount)
+        orderNumber = ans["orderNumber"]
+        return orderNumber
 
 def place_sell_order(name,amount,price):
     print("placing sell order")
@@ -46,14 +48,17 @@ def place_sell_order(name,amount,price):
     print("sell %s %s, rate is %s" % (str_amount,name,str_price))
     print("you will gain ",amount*price," btc")
     print("selling...")
-    ans = pol.sell(pair,str_ratio,str_amount)
-    print("answer : ",ans)
-    return int(ans["orderNumber"])
+    ans = input("Type ok to continue")
+    if ans == "ok":
+        ans = pol.sell(pair,str_ratio,str_amount)
+        print("answer : ",ans)
+        return int(ans["orderNumber"])
 
 def sell_now(name,orderNumber):
     print("selling low, stop loss")
     pair = "BTC_"+name
-    while(True):
+    sold = False
+    while(sold == False):
         sell_ratio,buy_ratio = find_rate(pair)
         print("sell ratio = ",sell_ratio)
         print("buy ratio = ",buy_ratio)
@@ -65,14 +70,16 @@ def sell_now(name,orderNumber):
         print("you will gain ",amount*ratio," btc")
         print("selling...")
         print("order number : ",orderNumber)
-        ans = pol.moveOrder(orderNumber,str_ratio)
-        print(ans)
-        if ans["success"] == 0:
-            #has already been sold
-            break
-        else:
-            #hasn't sold it entirely
-            orderNumber = ans["orderNumber"]
+        ans = input("Type ok to continue")
+        if ans == "ok":
+            ans = pol.moveOrder(orderNumber,str_ratio)
+            print(ans)
+            if ans["success"] == 0:
+                #has already been sold
+                sold = True
+            else:
+                #hasn't sold it entirely
+                orderNumber = ans["orderNumber"]
 
 def write_output(text):
     date = time.strftime('%d %B %Y %H:%M')

@@ -88,6 +88,28 @@ def load_config():
         config[name]["sell_price"] = data["sell_price"][i]
         config[name]["stop_loss_price"] = data["stop_loss_price"][i]
         config[name]["signal_buy_price"] = data["signal_buy_price"][i]
+        if config[name]["buy_price"] <= 0:
+            print("buy price at 0")
+            exit()
+        if config[name]["signal_buy_price"] <= 0:
+            print("signal buy price at 0")
+            exit()
+        if config[name]["sell_price"] <= 0:
+            print("sell price at 0")
+            exit()
+        if config[name]["stop_loss_price"] <= 0:
+            print("stop loss price at 0")
+            exit()
+        if config[name]["stop_loss_price"] > config[name]["buy_price"]:
+            print("stop loss > buy")
+            exit()
+        if config[name]["buy_price"] > config[name]["signal_buy_price"]:
+            print("buy price > signal buy")
+            exit()
+        if config[name]["signal_buy"] > config[name]["sell_price"]:
+            print("signal buy > sell price")
+            exit()
+    return config
 
 def get_btc_equivalent(balances):
     btc_amount,btc_equivalent = 0,0
@@ -100,23 +122,24 @@ def get_btc_equivalent(balances):
     return btc_amount,btc_equivalent
 
 def main_loop():
-    moneys = {}
     config = load_config()
     buy_orders = {}
     sell_orders = {}
     i = 0
     number_moneys = 2
-    balances = {} 
+    balances = {}
     while True:
         #recherche de stop loss, vend si un seuil de sécurité est dépassé
-        for name in list(moneys):
+        for name in list(balances):
+            if balances[name] == 0:
+                continue
             if current_prices[name] < config[name]["stop_loss_price"]:
                 trading_api.sell_now(name,sellOrders[name])
+                del sellOrders[name]
         #vérifier les ordres d'achats en attente
         if i >= 10:
             i = 0
             if len(buy_orders) > 0:
-                place_sell_order = False
                 orderNumbers = [order["orderNumber"] for order in trading_api.pol.returnOpenOrders("all")]
                 for orderNumber in list(buy_orders):
                     if not orderNumber in orderNumbers:
@@ -147,7 +170,7 @@ def main_loop():
                     btc_amount,btc_equivalent = get_btc_equivalent(balances)
                     invest_money = min(btc_equivalent/number_moneys,btc_amount)
                     if invest_money > 0:
-                        buy_order_number = place_buy_order(invest_money,name,config[name]["buy_price"])
+                        buy_order_number = trading_api.place_buy_order(invest_money,name,config[name]["buy_price"])
                         buy_order[buy_order_name] = (name,time.time()+5*60)
         i += 1
         time.sleep(1)
