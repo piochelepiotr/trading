@@ -5,8 +5,16 @@ import requests
 import socket
 from unittest.mock import patch
 import os
+import ssl
+from requests_toolbelt import SSLAdapter
 
+#s = requests.Session()
+#s.mount('https://',SSLAdapter(ssl.PROTOCOL_TLSv1))
+#ret = s.get("https://93.184.216.34", headers={"Host": "example.org"})
+#r = s.get("https://poloniex.com/public?command=returnTicker",headers={'host':'poloniex.com'})
+#print(r)
 ret = requests.get("https://poloniex.com/public?command=returnTicker")
+print(ret)
 
 #host = socket.gethostbyname("poloniex.com")
 #print(host)

@@ -6,6 +6,7 @@ import os
 import numpy as np
 import websocket
 import trading_api
+import json
 
 manager = multiprocessing.Manager()
 ns = manager.Namespace()
@@ -28,14 +29,15 @@ def on_message(ws, message):
         name = names[ID]
         if name[:3] == "BTC":
             name = name[4:]
-            if name == "ETH":
-                print("update ETH price : ",float(ticker[1]))
-            else:
-                print("other update")
+            #if name == "ETH":
+            #    print("update ETH price : ",float(ticker[1]))
+            #else:
+            #    print("other update")
             current_prices[name] = float(ticker[1])
             ns.c += 1
     except:
-        print("error on receiving ticker")
+        pass
+        #print("error on receiving ticker")
 
 def on_error(ws, error):
     print(error)
@@ -106,8 +108,10 @@ def get_btc_equivalent(balances):
         if name == "BTC":
             btc_amount = balances[name]
             btc_equivalent += btc_amount
-        else:
+        elif name in current_prices:
             btc_equivalent += balances[name]*current_prices[name]
+        elif balances[name] > 0:
+            print("ERROR, don't have the price of ",name)
     return btc_amount,btc_equivalent
 
 def main_loop():
@@ -154,7 +158,7 @@ def main_loop():
         #regarder les monnaies à acheter
         for name in list(config):
             if (len(balances) == 0 or balances[name] == 0) and not name in [name for name,expiration_date in buy_orders]:
-                if not name in list(current_prices):
+                if not name in current_prices:
                     continue
                 if current_prices[name] < config[name]["signal_buy_price"]:
                     balances = trading_api.pol.returnBalances()
