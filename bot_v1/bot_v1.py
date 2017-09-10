@@ -119,54 +119,59 @@ def main_loop():
     buy_orders = {}
     sell_orders = {}
     i = 0
-    number_moneys = 100
+    number_moneys = 10
     balances = {}
     while True:
         #recherche de stop loss, vend si un seuil de sécurité est dépassé
         for name in list(balances):
-            if balances[name] == 0:
+            if balances[name] == 0 or name == "BTC" or not name in current_prices or not name in config:
                 continue
             if current_prices[name] < config[name]["stop_loss_price"]:
-                trading_api.sell_now(name,sellOrders[name])
-                del sellOrders[name]
+                trading_api.sell_now(name,sell_orders[name])
+                del sell_orders[name]
         #vérifier les ordres d'achats en attente
         if i >= 10:
             i = 0
             if len(buy_orders) > 0:
-                orderNumbers = [order["orderNumber"] for order in trading_api.pol.returnOpenOrders("all")]
+                open_orders = trading_api.pol.returnOpenOrders("all")
+                orderNumbers = []
+                for pair in open_orders:
+                    orderNumbers.extend([order["orderNumber"] for order in open_orders[pair]])
                 for orderNumber in list(buy_orders):
                     if not orderNumber in orderNumbers:
                         #the order is fullfiled,place a sell order
                         balances = trading_api.pol.returnBalances()
-                        name,expiration_date = buy_orders[ordeNumber]
+                        name,expiration_date = buy_orders[orderNumber]
                         amount = balances[name]
-                        if amount > 0:
-                            orderSell = trading_api.place_sell_order(name,amount,config[name]["sell_price"])
-                            sell_orders[name] = orderSell
+                        if amount >= 0:
+                            order_sell = trading_api.place_sell_order(name,amount,config[name]["sell_price"])
+                            sell_orders[name] = order_sell
                         del buy_orders[orderNumber]
                 for orderNumber in list(buy_orders):
                     (name,expiration_date) = buy_orders[orderNumber]
                     if time.time() > expiration_date:
                         #remove the order
+                        print("cancelling order")
                         trading_api.pol.cancel("BTC_"+name,orderNumber)
                         balances = trading_api.pol.returnBalances()
                         amount = balances[name]
                         if amount > 0:
-                            orderSell = trading_api.place_sell_order(name,amount,config[name]["sell_price"])
-                            sell_orders[name] = orderSell
+                            order_sell = trading_api.place_sell_order(name,amount,config[name]["sell_price"])
+                            sell_orders[name] = order_sell
                         del buy_orders[orderNumber]
         #regarder les monnaies à acheter
         for name in list(config):
-            if (len(balances) == 0 or balances[name] == 0) and not name in [name for name,expiration_date in buy_orders]:
+            if (len(balances) == 0 or balances[name] == 0) and not name in [name for (name,expiration_date) in list(buy_orders.values())]:
                 if not name in current_prices:
                     continue
+                print(name)
                 if current_prices[name] < config[name]["signal_buy_price"]:
                     balances = trading_api.pol.returnBalances()
                     btc_amount,btc_equivalent = get_btc_equivalent(balances)
                     invest_money = min(btc_equivalent/number_moneys,btc_amount)
                     if invest_money > 0:
                         buy_order_number = trading_api.place_buy_order(invest_money,name,config[name]["buy_price"])
-                        buy_order[buy_order_name] = (name,time.time()+5*60)
+                        buy_orders[buy_order_number] = (name,time.time()+1*60)
         i += 1
         time.sleep(1)
 

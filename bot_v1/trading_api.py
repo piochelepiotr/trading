@@ -33,12 +33,16 @@ def place_buy_order(btc_amount,name,buy_price):
     amount = btc_amount / buy_price
     str_amount = '{:0.8f}'.format(amount)
     str_buy_price = '{:0.8f}'.format(buy_price)
-    print("buying ",name," at ",str_buy_price)
-    ans = input("Type ok to continue")
+    print("buying ",name," at ",str_buy_price, " using ",btc_amount," of bitcoin")
+    ans = input("Type ok to continue\n")
     if ans == "ok":
-        ans = pol.buy(pair,str_ratio,str_amount)
+        ans = pol.buy(pair,str_buy_price,str_amount)
+        print(ans)
         orderNumber = ans["orderNumber"]
         return orderNumber
+    else:
+        return "1"
+        #exit()
 
 def place_sell_order(name,amount,price):
     print("placing sell order")
@@ -48,11 +52,13 @@ def place_sell_order(name,amount,price):
     print("sell %s %s, rate is %s" % (str_amount,name,str_price))
     print("you will gain ",amount*price," btc")
     print("selling...")
-    ans = input("Type ok to continue")
+    ans = input("Type ok to continue\n")
     if ans == "ok":
         ans = pol.sell(pair,str_ratio,str_amount)
         print("answer : ",ans)
-        return int(ans["orderNumber"])
+        return ans["orderNumber"]
+    else:
+        exit()
 
 def sell_now(name,orderNumber):
     print("selling low, stop loss")
@@ -70,7 +76,7 @@ def sell_now(name,orderNumber):
         print("you will gain ",amount*ratio," btc")
         print("selling...")
         print("order number : ",orderNumber)
-        ans = input("Type ok to continue")
+        ans = input("Type ok to continue\n")
         if ans == "ok":
             ans = pol.moveOrder(orderNumber,str_ratio)
             print(ans)
@@ -80,6 +86,8 @@ def sell_now(name,orderNumber):
             else:
                 #hasn't sold it entirely
                 orderNumber = ans["orderNumber"]
+        else:
+            exit()
 
 def write_output(text):
     date = time.strftime('%d %B %Y %H:%M')
