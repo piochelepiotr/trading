@@ -15,12 +15,12 @@ def plot(data,name,buy_points_x,buy_points_y,sell_points_x,sell_points_y):
     #ax[0].plot(data['min_week'])
     #ax[0].plot(data['max_week'])
     #ax[0].plot(data['min_month'])
-    ax[0].plot(data['bollinger_middle'],color='grey')
-    ax[0].plot(data['bollinger_down'],color='blue')
-    ax[0].plot(data['bollinger_up'],color='blue')
-    ax[1].plot(data['macd'])
-    ax[1].plot(data['signal_line'])
-    ax[1].plot([0]*n)
+    #ax[0].plot(data['bollinger_middle'],color='grey')
+    #ax[0].plot(data['bollinger_down'],color='blue')
+    #ax[0].plot(data['bollinger_up'],color='blue')
+    #ax[1].plot(data['macd'])
+    #ax[1].plot(data['signal_line'])
+    #ax[1].plot([0]*n)
     #ax[1].plot(data["long_term"])
     #ax[1].plot(data["short_term"])
     #ax[1].plot(data["change_24h"])
@@ -41,8 +41,8 @@ def test_trade(period,name):
 
 period = 300
 moneys = load_data.load_moneys(period)
-buy_points_x,buy_points_y,sell_points_x,sell_points_y = decisions.choose_buy_points(moneys,period)
-for name in moneys:
-    if len(buy_points_x[name]) > 0:
-        plot(moneys[name],name,buy_points_x[name],buy_points_y[name],sell_points_x[name],sell_points_y[name])
+#buy_points_x,buy_points_y,sell_points_x,sell_points_y = decisions.manage_portfolio(moneys,(3600)//period)
+#for name in moneys:
+#    #if len(buy_points_x[name]) > 0:
+#    plot(moneys[name],name,buy_points_x[name],buy_points_y[name],sell_points_x[name],sell_points_y[name])
 

@@ -27,28 +27,60 @@ def choose_buy_points2(moneys):
         buy_points_y[name].append(moneys[name]['close'][i])
     return buy_points_x,buy_points_y
 
-def choose_buy_points3(moneys):
+def choose_buy_points(moneys,period):
     n = len(moneys[list(moneys)[0]]['close'])
     buy_points_x = {}
     buy_points_y = {}
+    sell_points_x = {}
+    sell_points_y = {}
     for name in moneys:
         buy_points_x[name] = []
         buy_points_y[name] = []
+        sell_points_x[name] = []
+        sell_points_y[name] = []
     for name in moneys:
-        print(name)
-        m = 0
+        #print(name)
+        #m = 0
         for i in range(n):
             #if moneys[name]['macd'][i] >= 0 and moneys[name]['macd'][i] >= moneys[name]['signal_line'][i] and moneys[name]['rsi'][i] < 60:
-            if moneys[name]['close'][i] <= moneys[name]['percent_line'][i] and moneys[name]['macd'][i] >= moneys[name]['signal_line'][i]:
+            if moneys[name]['macd'][i] >= moneys[name]['signal_line'][i] and moneys[name]['macd'][max(0,i-1)] <= moneys[name]['signal_line'][max(0,i-1)]:
                 buy_points_x[name].append(i)
                 buy_points_y[name].append(moneys[name]['close'][i])
-                if moneys[name]['close'][i] < moneys[name]['close'][min(n-1,i+(3600*2)//300)]:
-                    m += 1
-        if len(buy_points_x) != 0:
-            print("percent : ",m/len(buy_points_x[name])*100)
-    return buy_points_x,buy_points_y
+                #if moneys[name]['close'][i] < moneys[name]['close'][min(n-1,i+(3600*2)//300)]:
+                #    m += 1
+        #if len(buy_points_x) != 0:
+        #    print("percent : ",m/len(buy_points_x[name])*100)
+    return buy_points_x,buy_points_y,sell_points_x,sell_points_y
 
-def choose_buy_points(moneys,period):
+def manage_portfolio(moneys,period):
+    n = len(moneys[list(moneys)[0]]['close'])
+    buy_points_x = {}
+    buy_points_y = {}
+    sell_points_x = {}
+    sell_points_y = {}
+    moneys_amount = {}
+    btc_equ_L = []
+    for name in moneys:
+        buy_points_x[name] = []
+        buy_points_y[name] = []
+        sell_points_x[name] = []
+        sell_points_y[name] = []
+    for i in range(0,n,period):
+        #balance portfolio
+        total_btc = 1
+        if i > 0:
+            total_btc = sum([moneys_amount[name]*moneys[name]['open'][i] for name in moneys])
+        print("bitcoin : ",total_btc)
+        for_each = total_btc / len(list(moneys))
+        for name in moneys:
+            moneys_amount[name] = for_each / moneys[name]['open'][i]
+        for j in range(i,min(i+period,n)):
+            btc_equ_L.append(total_btc)
+    for name in moneys:
+        moneys[name]['btc_equ'] = btc_equ_L
+    return buy_points_x,buy_points_y,sell_points_x,sell_points_y
+
+def choose_buy_points3(moneys,period):
     n = len(moneys[list(moneys)[0]]['close'])
     buy_points_x = {}
     buy_points_y = {}
