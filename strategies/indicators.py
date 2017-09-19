@@ -52,6 +52,17 @@ def macd(close_prices,short_period=12,long_period=26,macd_period=9):
     signal_line = ema(macd,macd_period)
     return macd,signal_line
 
+def time_macd(macd,signal_line):
+    p = 0
+    time_macd = []
+    for i in range(len(macd)):
+        if macd[i] >= signal_line[i]:
+            p = p + 1
+        else:
+            p = 0
+        time_macd.append(p)
+    return time_macd
+
 def change(close_prices,period):
     return [(close_prices[i]/close_prices[max(0,i-period)] - 1)*100 for i in range(len(close_prices))]
 

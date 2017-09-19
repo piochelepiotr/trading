@@ -12,8 +12,8 @@ import load_data
 base_url = "https://poloniex.com/public?command=returnChartData&currencyPair=BTC_"
 data_folder_base = "data_"
 
-period = 3600*24*30*3
-step = 3600*24*30*2
+period = 3600*24*30*20
+step = 3600*24*30*30
 
 def make_dir(path):
     """
@@ -123,6 +123,7 @@ def get_part_pair(name, start_time, end_time,spacing):
     print("start time = ",start_time)
     print("end time = ",end_time)
     url = base_url + name
+    #url = "https://poloniex.com/public?command=returnChartData&currencyPair=USDT_BTC"
     url += "&start=" + str(start_time)
     url += "&end=" + str(end_time)
     url += "&period=" + str(spacing)
@@ -182,5 +183,5 @@ def get_data(spacing):
         p.join()
 
 
-get_data(300)
+get_data(86400)
 

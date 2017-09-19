@@ -1,6 +1,26 @@
-#! /usr/bin/python3
-
+#! /usr/bin/python3 
 import crypto
+import numpy as np
+
+def compute_buy_line(money,n):
+    #first, get all the moves from the average in percents
+    tab = [money["low"][i]/money["average"][i] for i in range(n)]
+    period = 20
+    tab2 = [min(tab[i:min(i+period,len(tab))]) for i in range(0,len(tab),period)]
+    tab3 = np.sort(tab2)
+    if len(tab3) > 10:
+        return tab3[10]
+    else:
+        return 1
+
+def compute_buy_lines(money):
+    period = 10
+    buy_line = []
+    for i in range(0,len(money["average"]),period):
+        c = compute_buy_line(money,i)
+        for j in range(i,min(len(money["average"]),i+period)):
+            buy_line.append(c)
+    return buy_line
 
 def compute_move(money,take_profit,stop_loss):
     n = len(money["close"])
@@ -78,19 +98,73 @@ def stat_up_change24h(money,down,up):
         print(n)
         print("stat up : ",n_up/n*100)
 
+def max_round(p):
+    return (p//50) * 50
+
+def value_dollars(btc_holds,p):
+    return sum([p*btc for btc in btc_holds])
+
+def market_maker(money):
+    m = money["high"][0]
+    r = max_round(m)
+    buy_points_x = []
+    buy_points_y = []
+    sell_points_x = []
+    sell_points_y = []
+    holds = []
+    btc_holds = []
+    dollars = 300
+    invest = 10
+    dollars_L = []
+    for i in range(len(money["close"])):
+        v = dollars + value_dollars(btc_holds,money["close"][i])
+        dollars_L.append(v)
+        #buy
+        m = max(money["high"][i],m)
+        r = max_round(m)
+        buy_p = r
+        if len(holds) > 0:
+            buy_p = holds[0] - 50
+        buy_p -= 50
+        if money["low"][i] < buy_p:
+            buy_points_x.append(i)
+            buy_points_y.append(buy_p)
+            holds = [buy_p+50] + holds
+            btc_holds = [invest/buy_p] + btc_holds
+            dollars -= invest
+        #sell
+        while 0 < len(holds) and holds[0] < money["high"][i]:
+            sell_points_x.append(i)
+            sell_points_y.append(holds[0])
+            dollars += btc_holds[0]*holds[0]
+            holds = holds[1:]
+            btc_holds = btc_holds[1:]
+    money["dollars"] = dollars_L
+    return buy_points_x,buy_points_y,sell_points_x,sell_points_y
+
 def stat_up_macd(money):
+    buy_points_x = []
+    buy_points_y = []
+    sell_points_x = []
+    sell_points_y = []
     n_up = 0
     n = 0
-    move = money["move"]
-    for i in range(1,len(move)):
-        if money["macd"][i] >= money["signal_line"][i] and money["macd"][i-1] <= money["signal_line"][i-1]:
-            if move[i] == 1:
-                n_up += 1
-                n += 1
-            elif move[i] == -1:
-                n += 1
-    if n > 0:
-        print("macd")
-        print(n)
-        print("stat up : ",n_up/n*100)
+    #move = money["move"]
+    #for i in range(1,len(move)):
+    #    if money["time_macd"][i] > 0:
+    #        if money["change_24h"][i] < -10:
+    #        #if money["macd_short"][i] >= money["signal_line_short"][i] and money["macd_short"][i-1] <= money["signal_line_short"][i-1]:
+    #            buy_points_x.append(i)
+    #            buy_points_y.append(money["open"][i])
+    #            if move[i] == 1:
+    #                n_up += 1
+    #                n += 1
+    #            elif move[i] == -1:
+    #                n += 1
+    #if n > 0:
+    #    print("macd")
+    #    print(n)
+    #    print("stat up : ",n_up/n*100)
+    ##if True:#money["change_24h"][i] < -10:
+    return buy_points_x,buy_points_y,sell_points_x,sell_points_y
 
