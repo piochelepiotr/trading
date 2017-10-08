@@ -1,9 +1,7 @@
 #! /usr/bin/python3
 
 import pandas as pd
-import indicators
 import os
-import compute_stats
 
 max_period = 3600*24*30*6
 data_folder_base = "data_"

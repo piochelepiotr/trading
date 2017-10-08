@@ -5,20 +5,11 @@ import numpy as np
 def manage_portfolio(moneys,period):
     n = len(moneys[list(moneys)[0]]['close'])
     m = len(moneys)
-    buy_points_x = {}
-    buy_points_y = {}
-    sell_points_x = {}
-    sell_points_y = {}
     moneys_amount = {}
     btc_equ_L = []
     b = []
     x = []
     eps = 1
-    for name in moneys:
-        buy_points_x[name] = []
-        buy_points_y[name] = []
-        sell_points_x[name] = []
-        sell_points_y[name] = []
     for i in range(0,n,period):
         #balance portfolio
         total_btc = 1
@@ -41,4 +32,3 @@ def manage_portfolio(moneys,period):
     x_tot = [moneys[name]['close'][n-1]/moneys[name]['close'][0] for name in moneys]
     x_b_tot = np.dot(x_tot,[1/m]*m)
     print("var = ",x_b_tot)
-    return buy_points_x,buy_points_y,sell_points_x,sell_points_y
