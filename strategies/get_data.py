@@ -13,7 +13,7 @@ base_url = "https://poloniex.com/public?command=returnChartData&currencyPair=BTC
 data_folder_base = "data_"
 
 period = 3600*24*30*20
-step = 3600*24*30*30
+step = 3600*24*30*2
 
 def make_dir(path):
     """
@@ -183,5 +183,5 @@ def get_data(spacing):
         p.join()
 
 
-get_data(86400)
+get_data(300)
 

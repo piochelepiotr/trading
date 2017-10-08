@@ -98,15 +98,16 @@ def stat_up_change24h(money,down,up):
         print(n)
         print("stat up : ",n_up/n*100)
 
-def max_round(p):
-    return (p//50) * 50
+def max_round(p,step):
+    return (p//step) * step
 
 def value_dollars(btc_holds,p):
     return sum([p*btc for btc in btc_holds])
 
 def market_maker(money):
+    step = 20
     m = money["high"][0]
-    r = max_round(m)
+    r = max_round(m,step)
     buy_points_x = []
     buy_points_y = []
     sell_points_x = []
@@ -114,22 +115,24 @@ def market_maker(money):
     holds = []
     btc_holds = []
     dollars = 300
-    invest = 10
+    invest = 4
     dollars_L = []
+    cash_L = []
     for i in range(len(money["close"])):
         v = dollars + value_dollars(btc_holds,money["close"][i])
         dollars_L.append(v)
+        cash_L.append(dollars)
         #buy
         m = max(money["high"][i],m)
-        r = max_round(m)
+        r = max_round(m,step)
         buy_p = r
         if len(holds) > 0:
-            buy_p = holds[0] - 50
-        buy_p -= 50
+            buy_p = holds[0] - step
+        buy_p -= step
         if money["low"][i] < buy_p:
             buy_points_x.append(i)
             buy_points_y.append(buy_p)
-            holds = [buy_p+50] + holds
+            holds = [buy_p+step] + holds
             btc_holds = [invest/buy_p] + btc_holds
             dollars -= invest
         #sell
@@ -140,6 +143,8 @@ def market_maker(money):
             holds = holds[1:]
             btc_holds = btc_holds[1:]
     money["dollars"] = dollars_L
+    money["cash"] = cash_L
+    print(dollars_L[-1])
     return buy_points_x,buy_points_y,sell_points_x,sell_points_y
 
 def stat_up_macd(money):
