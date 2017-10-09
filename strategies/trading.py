@@ -3,7 +3,7 @@
 from matplotlib.finance import candlestick2_ohlc
 import matplotlib.pyplot as plt
 import load_data
-import decisions
+import pamr
 
 def plot(data,name):
     n = len(data['close'])
@@ -15,7 +15,8 @@ def plot(data,name):
 
 period = 300
 moneys = load_data.load_moneys(period)
-buy_points_x,buy_points_y,sell_points_x,sell_points_y = decisions.manage_portfolio(moneys,(2*3600)//period)
-for name in moneys:
-    plot(moneys[name],name)
+#for i in range(1,10):
+pamr.manage_portfolio(moneys,(1*600)//period)
+#for name in moneys:
+#    plot(moneys[name],name)
 
