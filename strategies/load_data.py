@@ -3,12 +3,10 @@
 import pandas as pd
 import os
 
-max_period = 3600*24*30*6
 data_folder_base = "data_"
 
-currency_list = ['AMP','ARDR','BCN','BCY','BELA','BLK','BTCD','BTM','BTS','BURST','CLAM','DASH','DCR','DGB','DOGE','EMC2','ETC','ETH','EXP','FCT','FLDC','FLO','GAME','GNO','GNT','GRC','HUC','LBC','LSK','LTC','MAID','NAUT','NAV','NEOS','NMC','NOTE','NXC','NXT','OMNI','PASC','PINK','POT','PPC','RADS','REP','RIC','SBD','SC','SJCX','STEEM','STR','STRAT','SYS','VIA','VRC','VTC','XBC','XCP','XEM','XMR','XPM','XRP','XVC','ZEC']
 
-def load_money(period,name):
+def load_money(period,name,max_period):
     number_points = max_period // period
     data_folder = data_folder_base + str(period)
     data = pd.read_csv(data_folder + os.sep + name + '.csv')
@@ -17,9 +15,9 @@ def load_money(period,name):
     data = data.reset_index()
     return data
 
-def load_moneys(period):
+def load_moneys(period,max_period,moneys):
     moneys = {}
-    for name in currency_list[:15]:#["ETH","XMR","LTC","XRP","DGB"]:#currency_list
+    for name in moneys:
         print("loading ",name)
         moneys[name] = load_money(period,name)
     print("loaded")

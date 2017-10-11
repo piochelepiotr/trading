@@ -172,9 +172,9 @@ def write_data(data, name,spacing):
                 L.append(x['weightedAverage'])
                 wr.writerow(L)
 
-def get_data(spacing):
+def get_data(spacing,moneys):
     p_list = []
-    for name in load_data.currency_list:
+    for name in moneys:
         #get_pair(name,spacing)
         p = multiprocessing.Process(target=get_pair,args=(name,spacing))
         p_list.append(p)
@@ -183,5 +183,5 @@ def get_data(spacing):
         p.join()
 
 
-get_data(300)
+#get_data(300,params.moneys)
 
