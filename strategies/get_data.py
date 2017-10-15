@@ -175,11 +175,11 @@ def write_data(data, name,spacing):
 def get_data(spacing,moneys):
     p_list = []
     for name in moneys:
-        #get_pair(name,spacing)
+    #    get_pair(name,spacing)
         p = multiprocessing.Process(target=get_pair,args=(name,spacing))
         p_list.append(p)
         p.start()
-    for name in load_data.currency_list:
+    for name in moneys:
         p.join()
 
 

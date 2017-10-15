@@ -12,4 +12,3 @@ def buy_moneys(moneys):
     #check if there are still here, if yes, moves them : does that mutltiple times
     #moves at a higher price : should buy immediatly (check after one second for instance)
 
-bon, projet : faire semblant qu'il y a une RAM ? ou alors, simuler 

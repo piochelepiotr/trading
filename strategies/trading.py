@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import load_data
 import pamr
 import params
+import ressemblance
 
 
 def plot(data,name):
@@ -17,9 +18,13 @@ def plot(data,name):
     plt.show()
 
 period = 300
-max_period = 3600*24*7
+max_period = 3600*24*30*6
 moneys = load_data.load_moneys(period,max_period,params.moneys)
-pamr.manage_portfolio(moneys,(3*300)//period)
+#ressemblance.ressemblances(moneys,(12*300)//period)
+
+for i in range(3,4):
+    print("for i = ",i)
+    pamr.manage_portfolio_past(moneys,(i*300)//period)
 for name in moneys:
     plot(moneys[name],name)
 

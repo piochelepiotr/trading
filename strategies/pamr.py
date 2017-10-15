@@ -86,4 +86,4 @@ def manage_portfolio_past(moneys,period):
     x_tot = [moneys[name]['close'][n-1]/moneys[name]['close'][0] for name in moneys]
     print("end btc : ",btc_equ_L[-1])
     print("var = ",sum(x_tot)/m)
-    return [moneys[name]['close'][last_i] for name in list(moneys)],b,moneys[list(moneys)[0]]['date'][last_i]
+    return [moneys[name]['close'][last_i] for name in list(moneys)],b,moneys[list(moneys)[0]]['date'][n-1]
