@@ -1,4 +1,7 @@
+import polo_api
 #sell moneys
+APIKey,Secret = polo_api.get_keys()
+pol = polo_api.poloniex(APIKey,Secret)
 
 def sell_moneys(moneys):
     #get what you've got
@@ -12,3 +15,5 @@ def buy_moneys(moneys):
     #check if there are still here, if yes, moves them : does that mutltiple times
     #moves at a higher price : should buy immediatly (check after one second for instance)
 
+def compute_change(last_prices):
+    ticker = pol.returnTicker()
