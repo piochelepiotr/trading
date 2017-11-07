@@ -18,13 +18,16 @@ def plot(data,name):
     plt.show()
 
 period = 300
-max_period = 3600*24*30*6
+max_period = 3600*24
 moneys = load_data.load_moneys(period,max_period,params.moneys)
+print(len(moneys[list(moneys)[0]])," = len")
 #ressemblance.ressemblances(moneys,(12*300)//period)
 
-for i in range(3,4):
+for i in range(6,15):
+#i = 2
     print("for i = ",i)
     pamr.manage_portfolio_past(moneys,(i*300)//period)
 for name in moneys:
+    #name = list(moneys)[0]
     plot(moneys[name],name)
 

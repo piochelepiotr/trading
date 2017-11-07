@@ -17,7 +17,6 @@ import trade_algorithms
 #trade_algorithms.sell_moneys({"LTC":-1})
 #print(trade_algorithms.pol.returnOpenOrders("all"))
 
-
 get_data.get_data(params.period,params.moneys)
 moneys = load_data.load_moneys(params.period,params.training_period,params.moneys)
 last_prices,last_b,last_timestamp = pamr.manage_portfolio_past(moneys,params.pamr_step)
@@ -64,9 +63,12 @@ while(True):
     for name in amounts_diff:
         if amounts_diff[name] <= -0.00015:
             sell_moneys[name] = -amounts_diff[name]
-        else if amounts_diff[name] >= 0.00015:
+        elif amounts_diff[name] >= 0.00015:
             buy_moneys[name] = amounts_diff[name]
             tot_buy += buy_moneys[name]
+        else:
+            print("amount to little for ",name)
+            print("amount = ",amounts_diff[name])
     #sell moneys
     trade_algorithms.sell_moneys(sell_moneys)
     #get btc_amount

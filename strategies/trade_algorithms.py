@@ -13,35 +13,37 @@ def place_buy_order(name,price,btc_amount):
     str_price = '{:0.8f}'.format(price)
     print("buy %s %s, rate is %s" % (str_amount,name,str_price))
     print("you will use ",btc_amount," btc")
-    ans = input("Type ok to continue")
-    if ans != "ok":
-        print("not buying")
-        exit()
+    #ans = input("Type ok to continue")
+    #if ans != "ok":
+    #    print("not buying")
+    #    exit()
     ans = pol.buy(pair,str_price,str_amount)
     print(ans)
     if "error" in ans:
         if ans["error"] == "Not enough BTC.":
             print("not enought btc, changing amount")
             holdings = pol.returnBalances()
+            print("holdings")
+            print(holdings)
             place_buy_order(name,price,holdings["BTC"])
 
 def move_buy_order(num,price,name):
     str_price = '{:0.8f}'.format(price)
     print("moving order ",num," to price ",price)
-    ans = input("Type ok to continue")
-    if ans != "ok":
-        print("not buying")
-        exit()
+    #ans = input("Type ok to continue")
+    #if ans != "ok":
+    #    print("not buying")
+    #    exit()
     ans = pol.moveOrder(num,str_price)
     print(ans)
     if "error" in ans:
         if ans["error"] == "Not enough BTC.":
             print("not enought btc, changing amount")
-            pol.cancel("all",num)
-            time.sleep(1)
+            ans = pol.cancel("all",num)
+            print(ans)
             holdings = pol.returnBalances()
-            time.sleep(1)
-            #print(holdings)
+            print("holdings")
+            print(holdings)
             place_buy_order(name,price,holdings["BTC"])
 
 def place_sell_order(name,price,amount):
@@ -54,27 +56,30 @@ def place_sell_order(name,price,amount):
     str_price = '{:0.8f}'.format(price)
     print("selling %s %s, rate is %s" % (str_amount,name,str_price))
     print("you will gain ",btc_amount," btc")
-    ans = input("Type ok to continue")
-    if ans != "ok":
-        print("not selling")
-        exit()
+    #ans = input("Type ok to continue")
+    #if ans != "ok":
+    #    print("not selling")
+    #    exit()
     ans = pol.sell(pair,str_price,str_amount)
     print(ans)
 
 def move_sell_order(num,price):
     str_price = '{:0.8f}'.format(price)
     print("moving order num ",num," to price ", price)
-    ans = input("Type ok to continue")
-    if ans != "ok":
-        print("not moving order")
-        exit()
+    #ans = input("Type ok to continue")
+    #if ans != "ok":
+    #    print("not moving order")
+    #    exit()
     ans = pol.moveOrder(num,str_price)
     print(ans)
 
 def change_sell_orders(price_ref):
     ticker = pol.returnTicker()
+    print("ticker :")
+    print(ticker)
     openOrders = pol.returnOpenOrders("all")
-    print("open orders : ",openOrders)
+    print("open orders")
+    print(openOrders)
     n = 0
     for pair in openOrders:
         for order in openOrders[pair]:
@@ -82,7 +87,7 @@ def change_sell_orders(price_ref):
             if order["type"] != "sell":
                 print("error, not sell order")
                 exit()
-            move_sell_order(order["orderNumber"],ticker[pair][price_ref])
+            move_sell_order(order["orderNumber"],float(ticker[pair][price_ref]))
     if n == 0:
         return True
     else:
@@ -90,8 +95,11 @@ def change_sell_orders(price_ref):
 
 def change_buy_orders(price_ref):
     ticker = pol.returnTicker()
+    print("ticker")
+    print(ticker)
     openOrders = pol.returnOpenOrders("all")
-    print("open orders : ",openOrders)
+    print("open orders")
+    print(openOrders)
     n = 0
     for pair in openOrders:
         for order in openOrders[pair]:
@@ -99,7 +107,7 @@ def change_buy_orders(price_ref):
             if order["type"] != "buy":
                 print("error, not buy order")
                 exit()
-            move_buy_order(order["orderNumber"],ticker[pair][price_ref],name.split("_")[1])
+            move_buy_order(order["orderNumber"],float(ticker[pair][price_ref]),pair.split("_")[1])
     if n == 0:
         return True
     else:
@@ -109,15 +117,19 @@ def sell_moneys(moneys):
     #quantities are in btc
     #get what you've got
     holdings = pol.returnBalances()
+    print("holdings")
+    print(holdings)
     #sell everything
     if moneys is None:
         print("selling everything")
         moneys = {}
         for name in holdings:
-            if holdings[name] != 0:
+            if holdings[name] != 0 and name != "BTC":
                 moneys[name] = -1
     #get ticker
     ticker = pol.returnTicker()
+    print("ticker")
+    print(ticker)
     #place all the orders
     print("placing all the orders")
     for name in moneys:
@@ -147,16 +159,19 @@ def buy_moneys(moneys):
     #quantities are in btc
     #get what you've got ? (how many btc for instance)
     holdings = pol.returnBalances()
+    print("holdings")
+    print(holdings)
     #get ticker
     ticker = pol.returnTicker()
+    print("ticker")
+    print(ticker)
     total_btc_spent = sum(list(moneys.values()))
     btc_hold = holdings["BTC"]
     #place all the orders
-    for name in money:
+    for name in moneys:
         pair = "BTC_" + name
-        btc_quantity = moneys[name] * btc_hold / total_btc_spent
-        quantity = btc_quantity / ticker[pair]["lowestAsk"]
-        place_buy_order(name,float(ticker[pair]["highestBid"]),quantity)
+        btc_quantity = (moneys[name] * btc_hold / total_btc_spent)*0.99
+        place_buy_order(name,float(ticker[pair]["highestBid"]),btc_quantity)
     time.sleep(5)
     #check if there are still here, if yes, moves them : does that mutltiple times
     for i in range(5):
@@ -174,6 +189,8 @@ def buy_moneys(moneys):
 
 def cancel_orders():
     openOrders = pol.returnOpenOrders("all")
+    print("open orders")
+    print(openOrders)
     for pair in openOrders:
         for order in openOrders[pair]:
             print("cancelling order ",order["orderNumber"])
@@ -181,6 +198,8 @@ def cancel_orders():
             print(ans)
 def display_prices():
     ticker = pol.returnTicker()
+    print("ticker")
+    print(ticker)
     for pair in ticker:
         print("pair ",pair," price = ",ticker[pair]["last"])
 
@@ -190,10 +209,23 @@ def display_holdings():
         if holds[name] != 0:
             print(name," : ",holds[name])
 
+def display_btc_equivalent():
+    holds = pol.returnBalances()
+    ticker = pol.returnTicker()
+    total_btc = 0
+    for name in holds:
+        if holds[name] != 0:
+            btc = holds[name]
+            if name != "BTC":
+                btc *= float(ticker["BTC_"+name]["last"])
+            print(name," : ",holds[name]," worth : ", btc," btc")
+            total_btc += btc
+    print("total btc equivalent = ",total_btc)
+
 def compute_change(last_prices):
     ticker = pol.returnTicker()
-    x = {name : ticker["BTC_"+name]["last"]/last_prices[name] for name in last_prices}
-    prices = {name : ticker["BTC_"+name]["last"] for name in last_prices}
+    x = {name : float(ticker["BTC_"+name]["last"])/last_prices[name] for name in last_prices}
+    prices = {name : float(ticker["BTC_"+name]["last"]) for name in last_prices}
     return x,prices
 
 def get_important_holdings(moneys):

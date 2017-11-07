@@ -2,7 +2,7 @@
 
 import numpy as np
 
-fee = 0.003#(so 0.25%)
+fee = 0.00#(so 0.25%)
 
 def compute_portfolio(prev_b,x):
     eps = 1
@@ -84,7 +84,7 @@ def manage_portfolio_past(moneys,period):
     for name in moneys:
         moneys[name]['btc_equ'] = btc_equ_L
         moneys[name]['average_gains'] = average_gains
-    x_tot = [moneys[name]['close'][n-1]/moneys[name]['close'][0] for name in moneys]
+    x_tot = [moneys[name]['close'][last_i]/moneys[name]['close'][0] for name in moneys]
     print("end btc : ",btc_equ_L[-1])
     print("var = ",sum(x_tot)/m)
-    return {name : moneys[name]['close'][last_i] for name in list(moneys)},b,moneys[list(moneys)[0]]['date'][n-1]
+    return {name : moneys[name]['close'][last_i] for name in list(moneys)},b,moneys[list(moneys)[0]]['date'][last_i]
