@@ -3,8 +3,10 @@
 """
 Created on Tue Jun  6 17:13:53 2017
 
-@author: antoi and piotr
+@author: piotr
 """
+
+#This file is the poloniex api a bit changed
 
 import json
 import time
@@ -90,7 +92,9 @@ class poloniex:
     # Outputs:
     # {"BTC":"0.59098578","LTC":"3.31117268", ... }
     def returnBalances(self):
-        return self.api_query('returnBalances')
+        balances = self.api_query('returnBalances')
+        float_balances = {name : float(balances[name]) for name in balances}
+        return float_balances
  
     # Returns your open orders for a given market, specified by the "currencyPair" POST parameter, e.g. "BTC_XCP"
     # Inputs:

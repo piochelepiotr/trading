@@ -3,6 +3,8 @@ import time
 APIKey,Secret = polo_api.get_keys()
 pol = polo_api.poloniex(APIKey,Secret)
 
+#all the functions needed to trade on poloniex
+
 def place_buy_order(name,price,btc_amount):
     if btc_amount < 0.00015:
         print("amount to low, must be at least 0.00015 btc, not buying ",name)

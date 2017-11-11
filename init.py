@@ -7,15 +7,7 @@ import time
 import pamr
 import trade_algorithms
 
-#trade_algorithms.display_prices()
-#trade_algorithms.display_holdings()
-#trade_algorithms.place_buy_order("ETH",0.0003,100)
-#trade_algorithms.move_buy_order(357948230611,0.0004,"ETH")
-#trade_algorithms.place_sell_order("LTC",0.012,0.14513888)
-#trade_algorithms.move_sell_order("25217839100",0.00065)
-#trade_algorithms.cancel_orders()
-#trade_algorithms.sell_moneys({"LTC":-1})
-#print(trade_algorithms.pol.returnOpenOrders("all"))
+#This file contains the main procedure of the bot : gets data, computes, sells, buys, waits, etc
 
 get_data.get_data(params.period,params.moneys)
 moneys = load_data.load_moneys(params.period,params.training_period,params.moneys)

@@ -2,7 +2,9 @@
 
 import numpy as np
 
-fee = 0.00#(so 0.25%)
+#This file contains the implemetation of the PAMR algorithm
+
+fee = 0.0025#(so 0.25%)
 
 def compute_portfolio(prev_b,x):
     eps = 1

@@ -1,5 +1,7 @@
 #! /usr/bin/python3
 
+#I used this file only for tests, to test if the algorithm performs better on moneys that have opposit moves
+
 def ressemblance(money1,money2,period):
     n = len(money1['close'])
     r = 0

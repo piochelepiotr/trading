@@ -20,7 +20,6 @@ def plot(data,name):
 period = 300
 max_period = 3600*24
 moneys = load_data.load_moneys(period,max_period,params.moneys)
-print(len(moneys[list(moneys)[0]])," = len")
 #ressemblance.ressemblances(moneys,(12*300)//period)
 
 for i in range(6,15):

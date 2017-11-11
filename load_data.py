@@ -5,6 +5,8 @@ import os
 
 data_folder_base = "data_"
 
+##This file loads the data about the past prices in memory into a pandas dataframe
+
 
 def load_money(period,name,max_period):
     number_points = max_period // period
